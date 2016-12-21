@@ -8,7 +8,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/xenolf/lego/acme"
+	"github.com/jsha/lego/acme"
 )
 
 var n = flag.Int("n", 1, "Number of goroutines to spawn")
