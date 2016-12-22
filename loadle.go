@@ -59,24 +59,23 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	var clients []*acme.Client
+	ch := make(chan int)
 	for i := 0; i < *m; i++ {
-		// Use independent clients to avoid locking on nonce pool.
-		client, err := acme.NewClient(stagingURL, myUser, acme.RSA2048)
-		if err != nil {
-			log.Fatal(err)
-		}
-		clients = append(clients, client)
+		go func() {
+			// Use independent clients to avoid locking on nonce pool.
+			client, err := acme.NewClient(stagingURL, myUser, acme.RSA2048)
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _ = range ch {
+				client.Authz("loadtest.le-test.hoffman-andrews.com")
+				wg.Done()
+			}
+		}()
 	}
-
 	for i := 0; i < *n; i++ {
 		wg.Add(1)
-		go authz(clients[i%len(clients)], &wg)
+		ch <- 1
 	}
 	wg.Wait()
-}
-
-func authz(client *acme.Client, wg *sync.WaitGroup) {
-	client.Authz("loadtest.le-test.hoffman-andrews.com")
-	wg.Done()
 }
